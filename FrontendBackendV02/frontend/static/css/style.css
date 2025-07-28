@@ -1,0 +1,11 @@
+/* Estilo personalizado da landing page Fordox */
+
+.hero-section {
+  background: linear-gradient(120deg, #009688, #004d40);
+  height: 80vh;
+  padding-top: 80px;
+}
+
+.navbar-brand img {
+  max-height: 40px;
+}

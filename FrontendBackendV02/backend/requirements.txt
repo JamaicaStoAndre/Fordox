@@ -1,0 +1,12 @@
+# === Bibliotecas principais ===
+fastapi           # Framework principal para a API
+uvicorn           # Servidor ASGI para rodar FastAPI
+
+# === Integração com Supabase ===
+supabase          # Cliente oficial para acesso ao Supabase
+
+# === Leitura de variáveis de ambiente ===
+python-dotenv     # Carrega .env automaticamente
+
+# === Tipagens, segurança e utilidades (opcional para crescer com qualidade) ===
+pydantic          # Validação de dados

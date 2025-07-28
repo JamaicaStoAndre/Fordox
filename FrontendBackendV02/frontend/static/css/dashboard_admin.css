@@ -1,0 +1,16 @@
+/* Estilos específicos para dashboard_admin.html */
+
+#sidebar-wrapper .list-group-item.active {
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+}
+
+#page-content-wrapper h4 {
+  font-weight: 600;
+}
+
+img.img-fluid.rounded.shadow {
+  border: 1px solid #ccc;
+  padding: 5px;
+}

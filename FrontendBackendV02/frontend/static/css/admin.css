@@ -1,0 +1,31 @@
+/* assets/admin.css */
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+}
+
+#wrapper {
+  display: flex;
+  height: 100vh;
+}
+
+#sidebar-wrapper {
+  min-width: 220px;
+  max-width: 220px;
+  background-color: #f8f9fa;
+  transition: all 0.3s ease;
+}
+
+#sidebar-wrapper.collapsed {
+  margin-left: -220px;
+}
+
+#page-content-wrapper {
+  flex: 1;
+  overflow-x: hidden;
+}
+
+#menu-toggle {
+  border: none;
+  background: none;
+}
