@@ -1,0 +1,103 @@
+O dashboard (src/components/Dashboard.tsx) é a tela principal de visualização e consolida diversas métricas. A maioria dessas métricas é gerenciada pelo estado metrics dentro do componente Dashboard, que é atualizado pela função loadSensorData.
+
+A função loadSensorData tenta buscar dados reais dos sensores através da sensorAPI.getSensorData(). Se essa chamada for bem-sucedida, os dados reais são usados. Caso contrário (por exemplo, se houver um erro de conexão com o banco de dados externo), a aplicação usa dados simulados para evitar quebrar a interface.
+
+Vamos analisar cada seção e métrica:
+
+Detalhamento dos Dados do Dashboard
+1. Informações de Cabeçalho
+Nome da Granja/Frigorífico:
+Dado: Granja São João (se userRole for 'producer') ou Frigorífico Central (se userRole for 'slaughterhouse').
+Origem: Valor estático definido no componente Dashboard.tsx com base na propriedade userRole.
+Última atualização:
+Dado: currentTime.toLocaleTimeString('pt-BR').
+Origem: O estado currentTime é atualizado a cada 5 segundos por um setInterval no Dashboard.tsx. Isso indica a última vez que o dashboard tentou carregar os dados dos sensores.
+Status do Sistema:
+Dado: Erro, Carregando ou Monitorando.
+Origem: Baseado nos estados sensorDataError (se houver um erro na busca dos dados) e sensorDataLoading (enquanto os dados estão sendo carregados).
+2. Banners de Alerta
+Dados: alert.message e alert.time.
+Origem: Atualmente, os alertas são dados simulados (mockados) dentro do array alerts no Dashboard.tsx.
+Exemplo: { id: 1, type: 'warning', message: 'Temperatura acima do ideal no Galpão B (24.8°C)', time: '2 min atrás' }.
+Futuro: A ideia é que esses alertas sejam buscados de uma tabela de alertas no Supabase, gerados dinamicamente com base nos limites configurados na tela de Settings.
+3. Grid de Métricas Chave (MetricCards)
+Cada MetricCard exibe um title, um value, um icon, um status e uma change (que indica a origem dos dados).
+
+Temperatura Média:
+
+Dado: metrics.temperature.toFixed(1)°C.
+Origem:
+Dados Reais: Se a chamada à Edge Function get-sensor-data for bem-sucedida, o valor é obtido de data.metrics.temperature.current.
+Dados Simulados (Fallback): Se a chamada falhar, um valor aleatório é gerado: 22.5 + (Math.random() - 0.5) * 2.
+Edge Function (supabase/functions/get-sensor-data/index.ts): Esta função conecta ao PostgreSQL externo, busca as leituras mais recentes da tabela public.informacoes, identifica os sensores de temperatura (pelo sensor_type 'Celsius' ou sensor_name contendo 'temperatura'/'temp') e extrai o valor current (a leitura mais recente).
+Indicação de Origem (change): sensorDataError ? "Dados simulados" : "Dados reais".
+Umidade Relativa:
+
+Dado: metrics.humidity.toFixed(0)%.
+Origem:
+Dados Reais: data.metrics.humidity.current.
+Dados Simulados (Fallback): 68 + (Math.random() - 0.5) * 8.
+Edge Function (get-sensor-data): Conecta ao PostgreSQL externo, busca leituras da tabela public.informacoes, identifica sensores de umidade (pelo sensor_type 'Percentual' ou sensor_name contendo 'umidade'/'humidity') e extrai o valor current.
+Indicação de Origem (change): sensorDataError ? "Dados simulados" : "Dados reais".
+Consumo de Água:
+
+Dado: metrics.water.toFixed(1)L.
+Origem:
+Dados Reais: data.metrics.water.current.
+Dados Simulados (Fallback): 150 + (Math.random() - 0.5) * 20.
+Edge Function (get-sensor-data): Conecta ao PostgreSQL externo, busca leituras da tabela public.informacoes, identifica sensores de água (pelo sensor_type 'Litros' ou sensor_name contendo 'agua'/'water') e extrai o valor current.
+Indicação de Origem (change): sensorDataError ? "Dados simulados" : "Dados reais".
+Consumo de Energia:
+
+Dado: metrics.energy.toFixed(1)kW.
+Origem:
+Dados Reais: data.metrics.energy.current.
+Dados Simulados (Fallback): 12.5 + (Math.random() - 0.5) * 2.
+Edge Function (get-sensor-data): Conecta ao PostgreSQL externo, busca leituras da tabela public.informacoes, identifica sensores de energia (pelo sensor_type 'kW' ou sensor_name contendo 'energia'/'energy') e extrai o valor current.
+Indicação de Origem (change): sensorDataError ? "Dados simulados" : "Dados reais".
+Consumo de Ração:
+
+Dado: metrics.feed.toFixed(1)kg.
+Origem:
+Dados Reais: data.metrics.feed.current.
+Dados Simulados (Fallback): 85 + (Math.random() - 0.5) * 10.
+Edge Function (get-sensor-data): Conecta ao PostgreSQL externo, busca leituras da tabela public.informacoes, identifica sensores de ração (pelo sensor_type 'Kg' ou sensor_name contendo 'racao'/'feed'/'alimento') e extrai o valor current.
+Indicação de Origem (change): sensorDataError ? "Dados simulados" : "Dados reais".
+Peso Geral:
+
+Dado: metrics.weight.toFixed(1)kg.
+Origem:
+Dados Reais: data.metrics.weight.current.
+Dados Simulados (Fallback): 450 + (Math.random() - 0.5) * 50.
+Edge Function (get-sensor-data): Conecta ao PostgreSQL externo, busca leituras da tabela public.informacoes, identifica sensores de peso (pelo sensor_name contendo 'peso'/'weight'/'balanca') e extrai o valor current.
+Indicação de Origem (change): sensorDataError ? "Dados simulados" : "Dados reais".
+Conversão Alimentar (Visão Produtor):
+
+Dado: metrics.feedConversion.toFixed(2):1.
+Origem: Dados simulados (2.1 + (Math.random() - 0.5) * 0.2).
+Indicação de Origem (change): "Dados simulados".
+Observação: Esta métrica é específica para a Visão Produtor (userRole === 'producer'). Atualmente, não é puxada de um sensor real, mas sim simulada.
+Taxa de Mortalidade (Visão Produtor):
+
+Dado: metrics.mortality%.
+Origem: Dado simulado (0.8).
+Indicação de Origem (change): "Dados simulados".
+Observação: Específica para a Visão Produtor.
+Peso Médio (Visão Produtor):
+
+Dado: metrics.averageWeight.toFixed(1)kg.
+Origem: Dado simulado (45.2).
+Indicação de Origem (change): "Dados simulados".
+Observação: Específica para a Visão Produtor.
+4. Gráficos
+Condições Ambientais (24h) - EnvironmentChart.tsx:
+
+Dados: Linhas de Temperatura e Umidade ao longo do tempo.
+Origem: O componente EnvironmentChart também chama sensorAPI.getSensorData() para obter os dados históricos. Ele utiliza o array readings de data.metrics.temperature.readings e data.metrics.humidity.readings para plotar o gráfico.
+Edge Function (get-sensor-data): Retorna as últimas 10 leituras para cada tipo de sensor no array readings.
+Fallback: Se a busca falhar, o gráfico usa dados simulados internos.
+Conversão Alimentar - ConversionChart.tsx (Visão Produtor):
+
+Dados: Barras de "Realizado" e "Meta" por semana.
+Origem: Dados simulados (mockados) dentro do próprio componente ConversionChart.tsx.
+Observação: Este gráfico é específico para a Visão Produtor.
