@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Monitor, Users, TrendingUp, Bell, Settings, Factory, Beef, Cog } from 'lucide-react';
+import { Monitor, Users, TrendingUp, Bell, Settings, Factory, Beef, Cog, Table2 } from 'lucide-react';
 
 interface SidebarProps {
   activeSection: string;
@@ -18,6 +18,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection, user
     { id: 'animals', label: 'Gestão Animal', icon: Users },
     { id: 'reports', label: 'Relatórios', icon: Bell },
     { id: 'alerts', label: 'Alertas', icon: Bell },
+    { id: 'dados-brutos', label: 'Dados Brutos', icon: Table2, isRoute: true },
     { id: 'settings', label: 'Configurações', icon: Cog },
   ];
 

@@ -11,6 +11,7 @@ import Reports from './components/Reports';
 import Alerts from './components/Alerts';
 import Settings from './components/Settings';
 import Sidebar from './components/Sidebar';
+import RawDataViewer from './components/RawDataViewer';
 import Header from './components/Header';
 import IndicatorsPage from './components/IndicatorsPage';
 
@@ -120,6 +121,7 @@ function App() {
           <main className="flex-1 p-6 overflow-auto">
             <Routes>
               <Route path="/indicadores" element={<IndicatorsPage />} />
+              <Route path="/dados-brutos" element={<RawDataViewer />} />
               <Route path="/" element={
                 <>
                   {activeSection === 'dashboard' && <Dashboard userRole={userRole} />}

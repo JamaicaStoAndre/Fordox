@@ -310,3 +310,76 @@ export const configAPI = {
     return result
   }
 }
+
+// Tipos para metadados de dados brutos
+export interface RawDataMeta {
+  totalRows: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+  tableName: string;
+  filter: string;
+  sortBy: string | null;
+  sortOrder: 'ASC' | 'DESC';
+}
+
+// Funções para chamar a Edge Function de dados brutos
+export const rawDataAPI = {
+  /**
+   * Busca dados brutos de uma tabela específica do PostgreSQL externo.
+   * Suporta paginação, filtragem e ordenação.
+   * @param tableName O nome da tabela a ser consultada (ex: 'informacoes', 'sensor', 'grupo').
+   * @param options Opções de paginação, filtro e ordenação.
+   * @returns Uma Promise que resolve para um objeto contendo os dados e metadados da consulta.
+   */
+  async getRawData(
+    tableName: string,
+    options?: {
+      page?: number;
+      pageSize?: number;
+      filter?: string;
+      sortBy?: string;
+      sortOrder?: 'ASC' | 'DESC';
+    }
+  ): Promise<{ data: any[]; meta: RawDataMeta }> {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      throw new Error('User not authenticated');
+    }
+
+    const params = new URLSearchParams();
+    params.append('tableName', tableName);
+    if (options?.page) params.append('page', options.page.toString());
+    if (options?.pageSize) params.append('pageSize', options.pageSize.toString());
+    if (options?.filter) params.append('filter', options.filter);
+    if (options?.sortBy) params.append('sortBy', options.sortBy);
+    if (options?.sortOrder) params.append('sortOrder', options.sortOrder);
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/get-raw-data?${params}`, {
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Edge Function HTTP Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
+      throw new Error(`Edge Function error (${response.status}): ${errorText}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      console.error('Edge Function returned error:', result);
+      throw new Error(result.error || 'Failed to fetch raw data');
+    }
+
+    return result;
+  },
+};
