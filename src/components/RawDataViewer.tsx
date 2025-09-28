@@ -48,7 +48,7 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
 
   // Lista de tabelas permitidas para visualização
   const allowedTables = [
-    { value: 'informacoes', label: 'Informações (Leituras dos Sensores)' },
+    { value: 'informacoes', label: 'Informações (Leituras com Descrições)' },
     { value: 'sensor', label: 'Sensores (Cadastro de Sensores)' },
     { value: 'grupo', label: 'Grupos (Localização dos Sensores)' }
   ];
@@ -166,6 +166,11 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
     // Se for número, destacar
     if (typeof value === 'number') {
       return <span className="text-green-600 font-medium">{value}</span>;
+    }
+    
+    // Se for uma descrição de sensor, destacar
+    if (typeof value === 'string' && (value.includes('Temperatura') || value.includes('Umidade') || value.includes('Sensor'))) {
+      return <span className="text-purple-600 font-medium">{String(value)}</span>;
     }
     
     // Texto normal
@@ -317,7 +322,12 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
                               onClick={() => handleSort(colName)}
                             >
                               <div className="flex items-center space-x-1">
-                                <span className="font-mono">{colName}</span>
+                                <span className="font-mono">
+                                  {colName === 'sensor_descricao' ? 'Descrição do Sensor' :
+                                   colName === 'grupo_nome' ? 'Nome do Grupo' :
+                                   colName === 'data_registro' ? 'Data/Hora' :
+                                   colName}
+                                </span>
                                 {renderSortIcon(colName)}
                               </div>
                             </th>

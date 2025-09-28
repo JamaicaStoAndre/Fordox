@@ -148,10 +148,79 @@ Deno.serve(async (req: Request) => {
     mainQueryParams.push(pageSize, offset)
 
     // 8. Executar as queries de dados e contagem total em paralelo
-    const [dataResult, countResult] = await Promise.all([
-      client.query(query, mainQueryParams),
-      client.query(countQuery, countQueryParams) // A query de contagem usa apenas os parâmetros de filtro
-    ])
+    let dataResult, countResult;
+    
+    // Para a tabela 'informacoes', fazer JOIN com sensor e grupo para obter descrições
+    if (tableName === 'informacoes') {
+      // Query principal com JOIN
+      const joinQuery = `
+        SELECT 
+          i.id,
+          i.sensor,
+          s.descricao as sensor_descricao,
+          i.valor,
+          i.grupo,
+          g.nome as grupo_nome,
+          i.data_registro,
+          i.dispositivo
+        FROM public."informacoes" i
+        LEFT JOIN public."sensor" s ON i.sensor = s.id
+        LEFT JOIN public."grupo" g ON i.grupo = g.id
+      `;
+      
+      const joinCountQuery = `
+        SELECT COUNT(*) 
+        FROM public."informacoes" i
+        LEFT JOIN public."sensor" s ON i.sensor = s.id
+        LEFT JOIN public."grupo" g ON i.grupo = g.id
+      `;
+      
+      let finalQuery = joinQuery;
+      let finalCountQuery = joinCountQuery;
+      const joinMainParams: any[] = [];
+      const joinCountParams: any[] = [];
+      let joinMainParamIndex = 1;
+      let joinCountParamIndex = 1;
+      
+      // Aplicar filtro se houver
+      if (filter) {
+        const filterColumns = ['i.id', 'i.sensor', 's.descricao', 'i.valor', 'i.grupo', 'g.nome', 'i.data_registro', 'i.dispositivo'];
+        const mainFilterConditions = filterColumns.map(col => `CAST(${col} AS TEXT) ILIKE $${joinMainParamIndex++}`).join(' OR ');
+        const countFilterConditions = filterColumns.map(col => `CAST(${col} AS TEXT) ILIKE $${joinCountParamIndex++}`).join(' OR ');
+        
+        finalQuery += ` WHERE (${mainFilterConditions})`;
+        finalCountQuery += ` WHERE (${countFilterConditions})`;
+        
+        for (let i = 0; i < filterColumns.length; i++) {
+          joinMainParams.push(`%${filter}%`);
+          joinCountParams.push(`%${filter}%`);
+        }
+      }
+      
+      // Aplicar ordenação se houver
+      if (sortBy) {
+        const validColumns = ['id', 'sensor', 'sensor_descricao', 'valor', 'grupo', 'grupo_nome', 'data_registro', 'dispositivo'];
+        if (validColumns.includes(sortBy)) {
+          const validatedSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'ASC';
+          finalQuery += ` ORDER BY ${sortBy} ${validatedSortOrder}`;
+        }
+      }
+      
+      // Adicionar paginação
+      finalQuery += ` LIMIT $${joinMainParamIndex++} OFFSET $${joinMainParamIndex++}`;
+      joinMainParams.push(pageSize, offset);
+      
+      [dataResult, countResult] = await Promise.all([
+        client.query(finalQuery, joinMainParams),
+        client.query(finalCountQuery, joinCountParams)
+      ]);
+    } else {
+      // Para outras tabelas, usar a query original
+      [dataResult, countResult] = await Promise.all([
+        client.query(query, mainQueryParams),
+        client.query(countQuery, countQueryParams)
+      ]);
+    }
 
     await client.end() // Fechar conexão com o banco
 
