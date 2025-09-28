@@ -47,7 +47,11 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
   const pageSize = 10;
 
   // Lista de tabelas permitidas para visualização
-  const allowedTables = ['informacoes', 'sensor', 'grupo'];
+  const allowedTables = [
+    { value: 'informacoes', label: 'Informações (Leituras dos Sensores)' },
+    { value: 'sensor', label: 'Sensores (Cadastro de Sensores)' },
+    { value: 'grupo', label: 'Grupos (Localização dos Sensores)' }
+  ];
 
   /**
    * Função para buscar os dados da API.
@@ -137,6 +141,45 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
     return Object.keys(data[0]);
   };
 
+  /**
+   * Formata o valor da célula para exibição
+   */
+  const formatCellValue = (value: any) => {
+    if (value === null || value === undefined) {
+      return <span className="text-gray-400 italic">null</span>;
+    }
+    
+    // Se for uma data, formatar
+    if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
+      try {
+        const date = new Date(value);
+        return (
+          <span className="text-blue-600" title={value}>
+            {date.toLocaleString('pt-BR')}
+          </span>
+        );
+      } catch {
+        return <span className="font-mono text-sm">{String(value)}</span>;
+      }
+    }
+    
+    // Se for número, destacar
+    if (typeof value === 'number') {
+      return <span className="text-green-600 font-medium">{value}</span>;
+    }
+    
+    // Texto normal
+    return <span className="text-gray-900">{String(value)}</span>;
+  };
+
+  /**
+   * Obtém o nome amigável da tabela
+   */
+  const getTableDisplayName = () => {
+    const table = allowedTables.find(t => t.value === selectedTable);
+    return table ? table.label : selectedTable;
+  };
+
   return (
     <div className="space-y-6">
       {/* Cabeçalho da página e seleção de tabela */}
@@ -149,11 +192,11 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
               id="table-select"
               value={selectedTable}
               onChange={handleTableChange}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white min-w-64"
             >
               {allowedTables.map((table) => (
-                <option key={table} value={table}>
-                  {table}
+                <option key={table.value} value={table.value}>
+                  {table.label}
                 </option>
               ))}
             </select>
@@ -174,12 +217,20 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder={`Filtrar dados na tabela "${selectedTable}"...`}
+              placeholder={`Filtrar dados em todas as colunas...`}
               value={filterText}
               onChange={handleFilterChange}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
             />
           </div>
+          {filterText && (
+            <button
+              onClick={() => setFilterText('')}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center space-x-2"
+            >
+              <span>Limpar</span>
+            </button>
+          )}
         </div>
 
         {/* Área de carregamento ou dados */}
@@ -198,11 +249,12 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-blue-900 flex items-center">
                     <Database className="h-5 w-5 mr-2" />
-                    Tabela: <span className="font-mono ml-2 text-blue-700">{selectedTable}</span>
+                    {getTableDisplayName()}
                   </h3>
                   <p className="text-sm text-blue-700 mt-1">
                     {meta ? `${meta.totalRows} registros encontrados` : 'Carregando informações...'}
                     {filterText && ` • Filtro: "${filterText}"`}
+                    {getColumnNames().length > 0 && ` • ${getColumnNames().length} colunas`}
                   </p>
                 </div>
                 {sortBy && (
@@ -220,8 +272,8 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
                 <h3 className="text-lg font-medium text-gray-700 mb-2">Nenhum dado encontrado</h3>
                 <p className="text-sm">
                   {filterText 
-                    ? `Não foram encontrados registros na tabela "${selectedTable}" com o filtro "${filterText}".`
-                    : `A tabela "${selectedTable}" não possui dados para exibir.`
+                    ? `Não foram encontrados registros com o filtro "${filterText}".`
+                    : `A tabela selecionada não possui dados para exibir.`
                   }
                 </p>
                 {filterText && (
@@ -239,8 +291,11 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
                 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                   {/* Cabeçalho das colunas */}
                   <div className="bg-gray-50 border-b border-gray-200 px-6 py-3">
-                    <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Colunas da Tabela ({getColumnNames().length})
+                    <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wider flex items-center justify-between">
+                      <span>Dados da Tabela ({getColumnNames().length} colunas)</span>
+                      <span className="text-xs normal-case text-gray-500">
+                        {data.length} {data.length === 1 ? 'registro' : 'registros'} nesta página
+                      </span>
                     </h4>
                   </div>
                   
@@ -275,12 +330,8 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
                             </td>
                             {getColumnNames().map((colName, colIndex) => (
                               <td key={colIndex} className="px-6 py-4 text-sm text-gray-900">
-                                <div className="max-w-xs truncate" title={String(row[colName])}>
-                                  {row[colName] === null || row[colName] === undefined ? (
-                                    <span className="text-gray-400 italic">null</span>
-                                  ) : (
-                                    <span className="font-mono">{String(row[colName])}</span>
-                                  )}
+                                <div className="max-w-xs" title={String(row[colName] || 'null')}>
+                                  {formatCellValue(row[colName])}
                                 </div>
                               </td>
                             ))}
@@ -293,7 +344,7 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
 
                 {/* Controles de Paginação */}
                 {meta && meta.totalPages > 1 && (
-                  <div className="bg-white px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                  <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                     <div className="flex items-center text-sm text-gray-700">
                       <span>
                         Página <span className="font-medium">{currentPage}</span> de{' '}
@@ -306,32 +357,32 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
                         <span className="font-medium">{meta.totalRows}</span> registros
                       </span>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-1">
                       <button
                         onClick={() => setCurrentPage(1)}
                         disabled={currentPage === 1}
-                        className="px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-3 py-1 text-xs border border-gray-300 rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Primeira
                       </button>
                       <button
                         onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                         disabled={currentPage === 1}
-                        className="px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-3 py-1 text-xs border border-gray-300 rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Anterior
                       </button>
                       <button
                         onClick={() => setCurrentPage(prev => Math.min(meta.totalPages, prev + 1))}
                         disabled={currentPage === meta.totalPages}
-                        className="px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-3 py-1 text-xs border border-gray-300 rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Próxima
                       </button>
                       <button
                         onClick={() => setCurrentPage(meta.totalPages)}
                         disabled={currentPage === meta.totalPages}
-                        className="px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-3 py-1 text-xs border border-gray-300 rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Última
                       </button>
