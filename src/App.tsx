@@ -14,6 +14,7 @@ import Sidebar from './components/Sidebar';
 import RawDataViewer from './components/RawDataViewer';
 import Header from './components/Header';
 import IndicatorsPage from './components/IndicatorsPage';
+import IndicatorDetailPage from './components/IndicatorDetailPage';
 
 function App() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -121,6 +122,7 @@ function App() {
           <main className="flex-1 p-6 overflow-auto">
             <Routes>
               <Route path="/indicadores" element={<IndicatorsPage />} />
+              <Route path="/indicadores/:type" element={<IndicatorDetailPage />} />
               <Route path="/dados-brutos" element={<RawDataViewer />} />
               <Route path="/" element={
                 <>
