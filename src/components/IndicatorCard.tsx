@@ -23,7 +23,7 @@
  */
 
 import React from 'react';
-import { LucideIcon } from 'lucide-react';
+import { Video as LucideIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import WeeklyChart from './WeeklyChart';
 import { useIndicadorData } from '../hooks/useIndicadorData';
