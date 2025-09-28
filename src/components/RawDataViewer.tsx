@@ -186,21 +186,6 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Visualizador de Dados Brutos</h2>
-          <div className="flex items-center space-x-4">
-            <label htmlFor="table-select" className="sr-only">Selecionar Tabela</label>
-            <select
-              id="table-select"
-              value={selectedTable}
-              onChange={handleTableChange}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white min-w-64"
-            >
-              {allowedTables.map((table) => (
-                <option key={table.value} value={table.value}>
-                  {table.label}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
         {/* Exibição de mensagens de erro */}
@@ -247,10 +232,27 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-blue-900 flex items-center">
+                  <div className="flex items-center space-x-4 mb-3">
+                    <h3 className="text-lg font-semibold text-blue-900 flex items-center">
+                      <Database className="h-5 w-5 mr-2" />
+                      Tabela:
+                    </h3>
+                    <select
+                      value={selectedTable}
+                      onChange={handleTableChange}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm font-medium text-blue-900"
+                    >
+                      {allowedTables.map((table) => (
+                        <option key={table.value} value={table.value}>
+                          {table.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <h4 className="text-base font-medium text-blue-800 flex items-center">
                     <Database className="h-5 w-5 mr-2" />
                     {getTableDisplayName()}
-                  </h3>
+                  </h4>
                   <p className="text-sm text-blue-700 mt-1">
                     {meta ? `${meta.totalRows} registros encontrados` : 'Carregando informações...'}
                     {filterText && ` • Filtro: "${filterText}"`}
@@ -291,12 +293,12 @@ const RawDataViewer: React.FC<RawDataViewerProps> = () => {
                 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                   {/* Cabeçalho das colunas */}
                   <div className="bg-gray-50 border-b border-gray-200 px-6 py-3">
-                    <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wider flex items-center justify-between">
-                      <span>Dados da Tabela ({getColumnNames().length} colunas)</span>
+                    <h5 className="text-sm font-semibold text-gray-700 uppercase tracking-wider flex items-center justify-between">
+                      <span>Dados ({getColumnNames().length} colunas)</span>
                       <span className="text-xs normal-case text-gray-500">
                         {data.length} {data.length === 1 ? 'registro' : 'registros'} nesta página
                       </span>
-                    </h4>
+                    </h5>
                   </div>
                   
                   {/* Tabela de dados */}
