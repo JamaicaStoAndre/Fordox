@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Monitor, Users, TrendingUp, Bell, Settings as SettingsIcon, AlertTriangle, CheckCircle } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
@@ -11,6 +12,7 @@ import Alerts from './components/Alerts';
 import Settings from './components/Settings';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import IndicatorsPage from './components/IndicatorsPage';
 
 function App() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -104,25 +106,34 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar 
-        activeSection={activeSection} 
-        setActiveSection={setActiveSection}
-        userRole={userRole}
-      />
-      
-      <div className="flex-1 flex flex-col">
-        <Header userRole={userRole} setUserRole={setUserRole} />
+    <Router>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar 
+          activeSection={activeSection} 
+          setActiveSection={setActiveSection}
+          userRole={userRole}
+        />
         
-        <main className="flex-1 p-6 overflow-auto">
-          {activeSection === 'dashboard' && <Dashboard userRole={userRole} />}
-          {activeSection === 'animals' && <AnimalManagement />}
-          {activeSection === 'reports' && <Reports userRole={userRole} />}
-          {activeSection === 'alerts' && <Alerts />}
-          {activeSection === 'settings' && <Settings />}
-        </main>
+        <div className="flex-1 flex flex-col">
+          <Header userRole={userRole} setUserRole={setUserRole} />
+          
+          <main className="flex-1 p-6 overflow-auto">
+            <Routes>
+              <Route path="/indicadores" element={<IndicatorsPage />} />
+              <Route path="/" element={
+                <>
+                  {activeSection === 'dashboard' && <Dashboard userRole={userRole} />}
+                  {activeSection === 'animals' && <AnimalManagement />}
+                  {activeSection === 'reports' && <Reports userRole={userRole} />}
+                  {activeSection === 'alerts' && <Alerts />}
+                  {activeSection === 'settings' && <Settings />}
+                </>
+              } />
+            </Routes>
+          </main>
+        </div>
       </div>
-    </div>
+    </Router>
   );
 }
 

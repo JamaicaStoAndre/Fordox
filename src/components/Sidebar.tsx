@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Monitor, Users, TrendingUp, Bell, Settings, Factory, Beef, Cog } from 'lucide-react';
 
 interface SidebarProps {
@@ -8,10 +9,14 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection, userRole }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Monitor },
+    { id: 'indicadores', label: 'Indicadores', icon: TrendingUp, isRoute: true },
     { id: 'animals', label: 'Gestão Animal', icon: Users },
-    { id: 'reports', label: 'Relatórios', icon: TrendingUp },
+    { id: 'reports', label: 'Relatórios', icon: Bell },
     { id: 'alerts', label: 'Alertas', icon: Bell },
     { id: 'settings', label: 'Configurações', icon: Cog },
   ];
@@ -38,12 +43,23 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection, user
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
+            const isActive = item.isRoute 
+              ? location.pathname === `/${item.id}`
+              : activeSection === item.id;
+            
             return (
               <li key={item.id}>
                 <button
-                  onClick={() => setActiveSection(item.id)}
+                  onClick={() => {
+                    if (item.isRoute) {
+                      navigate(`/${item.id}`);
+                    } else {
+                      navigate('/');
+                      setActiveSection(item.id);
+                    }
+                  }}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
-                    activeSection === item.id
+                    isActive
                       ? 'bg-green-50 text-green-700 border-l-4 border-green-600'
                       : 'text-gray-700 hover:bg-gray-50 hover:text-green-600'
                   }`}
