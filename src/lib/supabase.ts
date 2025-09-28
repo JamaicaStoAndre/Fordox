@@ -6,7 +6,11 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 console.log('Supabase URL:', supabaseUrl)
 console.log('Supabase Anon Key:', supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'NÃO CONFIGURADO')
 
-if (!supabaseUrl || !supabaseAnonKey) {
+// Verificar se as variáveis estão configuradas e não são placeholders
+const isValidUrl = supabaseUrl && !supabaseUrl.includes('seu-projeto') && !supabaseUrl.includes('your-project-ref')
+const isValidKey = supabaseAnonKey && !supabaseAnonKey.includes('sua_chave') && !supabaseAnonKey.includes('your-actual-anon-key')
+
+if (!supabaseUrl || !supabaseAnonKey || !isValidUrl || !isValidKey) {
   const errorMsg = `
 ERRO: Variáveis de ambiente do Supabase não configuradas!
 
@@ -15,13 +19,15 @@ Para corrigir:
 2. Acesse seu projeto Supabase → Settings → API
 3. Copie o Project URL e anon public key
 4. Adicione no .env:
-   VITE_SUPABASE_URL=sua_url_aqui
-   VITE_SUPABASE_ANON_KEY=sua_chave_anon_aqui
+   VITE_SUPABASE_URL=https://seu-projeto-id.supabase.co
+   VITE_SUPABASE_ANON_KEY=sua_chave_anon_real_aqui
 5. Reinicie o servidor (npm run dev)
 
+IMPORTANTE: Substitua os valores de exemplo pelos valores reais do seu projeto!
+
 Valores atuais:
-VITE_SUPABASE_URL: ${supabaseUrl || 'AUSENTE'}
-VITE_SUPABASE_ANON_KEY: ${supabaseAnonKey ? 'PRESENTE MAS PODE ESTAR INCORRETA' : 'AUSENTE'}
+VITE_SUPABASE_URL: ${supabaseUrl || 'AUSENTE'} ${!isValidUrl ? '(PLACEHOLDER DETECTADO)' : ''}
+VITE_SUPABASE_ANON_KEY: ${supabaseAnonKey ? 'PRESENTE' : 'AUSENTE'} ${!isValidKey ? '(PLACEHOLDER DETECTADO)' : ''}
   `
   console.error(errorMsg)
   alert(errorMsg)
