@@ -98,8 +98,10 @@ Deno.serve(async (req: Request) => {
     const offset = (page - 1) * pageSize
     let query = `SELECT * FROM public."${tableName}"`
     let countQuery = `SELECT COUNT(*) FROM public."${tableName}"`
-    const queryParams: any[] = []
-    let paramIndex = 1
+    const mainQueryParams: any[] = []
+    const countQueryParams: any[] = []
+    let mainParamIndex = 1
+    let countParamIndex = 1
 
     // 5. Aplicar filtro se houver
     if (filter) {
@@ -112,11 +114,15 @@ Deno.serve(async (req: Request) => {
       const columnNames = columnNamesResult.rows.map(row => row.column_name)
 
       // Construir condições de filtro para cada coluna
-      const filterConditions = columnNames.map(col => `CAST("${col}" AS TEXT) ILIKE $${paramIndex++}`).join(' OR ')
-      query += ` WHERE (${filterConditions})`
-      countQuery += ` WHERE (${filterConditions})`
+      const mainFilterConditions = columnNames.map(col => `CAST("${col}" AS TEXT) ILIKE $${mainParamIndex++}`).join(' OR ')
+      const countFilterConditions = columnNames.map(col => `CAST("${col}" AS TEXT) ILIKE $${countParamIndex++}`).join(' OR ')
+      
+      query += ` WHERE (${mainFilterConditions})`
+      countQuery += ` WHERE (${countFilterConditions})`
+      
       for (let i = 0; i < columnNames.length; i++) {
-        queryParams.push(`%${filter}%`) // Adicionar o valor do filtro para cada coluna
+        mainQueryParams.push(`%${filter}%`) // Adicionar o valor do filtro para cada coluna (query principal)
+        countQueryParams.push(`%${filter}%`) // Adicionar o valor do filtro para cada coluna (query de contagem)
       }
     }
 
@@ -138,19 +144,19 @@ Deno.serve(async (req: Request) => {
     }
 
     // 7. Adicionar limites de paginação
-    query += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`
-    queryParams.push(pageSize, offset)
+    query += ` LIMIT $${mainParamIndex++} OFFSET $${mainParamIndex++}`
+    mainQueryParams.push(pageSize, offset)
 
     // 8. Executar as queries de dados e contagem total em paralelo
     const [dataResult, countResult] = await Promise.all([
-      client.query(query, queryParams),
-      client.query(countQuery, queryParams.slice(0, paramIndex - 2)) // A query de contagem não precisa de LIMIT/OFFSET
+      client.query(query, mainQueryParams),
+      client.query(countQuery, countQueryParams) // A query de contagem usa apenas os parâmetros de filtro
     ])
 
     await client.end() // Fechar conexão com o banco
 
     // 9. Preparar a resposta
-    const totalRows = parseInt(countResult.rows.count, 10)
+    const totalRows = parseInt(countResult.rows[0].count, 10)
     const totalPages = Math.ceil(totalRows / pageSize)
 
     return new Response(
