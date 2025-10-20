@@ -16,6 +16,7 @@
 
 import { useState, useEffect } from 'react';
 import { sensorAPI } from '../lib/supabase';
+import { useGrupo } from '../contexts/GrupoContext';
 
 // Define como os dados de cada indicador devem ser organizados
 interface IndicadorDataPoint {
@@ -35,11 +36,13 @@ interface IndicadorData {
 
 /**
  * Hook que busca dados históricos de um indicador específico
- * 
+ *
  * @param tipo - Tipo do indicador: 'temperature', 'humidity', 'water', etc.
  * @returns Objeto com dados, status de carregamento e se é simulado
  */
 export const useIndicadorData = (tipo: string): IndicadorData => {
+  const { grupoSelecionado } = useGrupo();
+
   // Estados para controlar os dados e status
   const [data, setData] = useState<IndicadorDataPoint[]>([]);
   const [current, setCurrent] = useState<number>(0);
@@ -56,10 +59,10 @@ export const useIndicadorData = (tipo: string): IndicadorData => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Tenta buscar dados reais do banco de dados
-        console.log(`Buscando dados reais para: ${tipo}`);
-        const sensorData = await sensorAPI.getSensorData();
+
+        // Tenta buscar dados reais do banco de dados para o grupo selecionado
+        console.log(`Buscando dados reais para: ${tipo} do grupo: ${grupoSelecionado?.nome}`);
+        const sensorData = await sensorAPI.getSensorData(grupoSelecionado?.id);
         
         // Verifica se conseguiu dados do tipo solicitado
         const metrics = sensorData.metrics;
@@ -138,7 +141,7 @@ export const useIndicadorData = (tipo: string): IndicadorData => {
     };
 
     fetchData();
-  }, [tipo]); // Executa novamente se o tipo mudar
+  }, [tipo, grupoSelecionado]); // Executa novamente se o tipo ou grupo mudar
 
   return { data, current, loading, isSimulated, error };
 };

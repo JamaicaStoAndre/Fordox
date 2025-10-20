@@ -44,21 +44,27 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // Extrair parâmetros da URL (grupo_id)
+    const url = new URL(req.url)
+    const grupoId = url.searchParams.get('grupo_id')
+
+    console.log('Filtro de grupo recebido:', grupoId)
+
     // Verificar variáveis de ambiente do PostgreSQL
     const requiredEnvVars = ['PGHOST', 'PGDB', 'PGUSER', 'PGPASSWORD']
     const missingVars = requiredEnvVars.filter(varName => !Deno.env.get(varName))
-    
+
     if (missingVars.length > 0) {
       console.error('Missing PostgreSQL environment variables:', missingVars)
       return new Response(
-        JSON.stringify({ 
-          error: 'Database configuration error', 
+        JSON.stringify({
+          error: 'Database configuration error',
           details: `Missing environment variables: ${missingVars.join(', ')}`,
           missing_vars: missingVars
         }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
@@ -127,8 +133,9 @@ Deno.serve(async (req: Request) => {
     }
 
     // Buscar dados mais recentes dos sensores com informações relacionadas
-    const query = `
-      SELECT 
+    // Se grupo_id foi fornecido, filtrar por esse grupo
+    let query = `
+      SELECT
         i.id,
         i.sensor,
         i.valor,
@@ -143,6 +150,14 @@ Deno.serve(async (req: Request) => {
       LEFT JOIN public.sensor s ON i.sensor = s.id
       LEFT JOIN public.grupo g ON i.grupo = g.id
       WHERE i.data_registro >= NOW() - INTERVAL '24 hours'
+    `
+
+    // Adicionar filtro por grupo se fornecido
+    if (grupoId) {
+      query += ` AND i.grupo = ${parseInt(grupoId)}`
+    }
+
+    query += `
       ORDER BY i.data_registro DESC
       LIMIT 100
     `

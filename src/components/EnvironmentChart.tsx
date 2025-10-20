@@ -1,7 +1,9 @@
 import React from 'react';
 import { sensorAPI } from '../lib/supabase';
+import { useGrupo } from '../contexts/GrupoContext';
 
 const EnvironmentChart: React.FC = () => {
+  const { grupoSelecionado } = useGrupo();
   const [chartData, setChartData] = React.useState([
     { time: '00:00', temp: 21.2, humidity: 65 },
     { time: '04:00', temp: 20.8, humidity: 68 },
@@ -14,12 +16,12 @@ const EnvironmentChart: React.FC = () => {
 
   React.useEffect(() => {
     loadSensorHistory();
-  }, []);
+  }, [grupoSelecionado]);
 
   const loadSensorHistory = async () => {
     try {
       setLoading(true);
-      const data = await sensorAPI.getSensorData();
+      const data = await sensorAPI.getSensorData(grupoSelecionado?.id);
       
       // If we have real sensor readings, use them for the chart
       if (data.metrics.temperature.readings && data.metrics.temperature.readings.length > 0) {

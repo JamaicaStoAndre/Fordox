@@ -134,15 +134,21 @@ export interface WeatherData {
 
 // Funções para chamar as Edge Functions
 export const sensorAPI = {
-  async getSensorData(): Promise<{ sensors: Record<string, SensorData>, metrics: SensorMetrics }> {
+  async getSensorData(grupoId?: number): Promise<{ sensors: Record<string, SensorData>, metrics: SensorMetrics }> {
     const { data: { session } } = await supabase.auth.getSession()
-    
+
     if (!session) {
       throw new Error('User not authenticated')
     }
 
     try {
-      const response = await fetch(`${supabaseUrl}/functions/v1/get-sensor-data`, {
+      // Construir URL com parâmetro grupo_id se fornecido
+      let url = `${supabaseUrl}/functions/v1/get-sensor-data`
+      if (grupoId) {
+        url += `?grupo_id=${grupoId}`
+      }
+
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
@@ -215,6 +221,35 @@ export const weatherAPI = {
     }
 
     return result.data
+  }
+}
+
+export const gruposAPI = {
+  async getGrupos(): Promise<any[]> {
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
+      throw new Error('User not authenticated')
+    }
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/get-grupos`, {
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const result = await response.json()
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to fetch grupos')
+    }
+
+    return result.data.grupos
   }
 }
 

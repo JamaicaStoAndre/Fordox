@@ -5,6 +5,7 @@ import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { GrupoProvider } from './contexts/GrupoContext';
 import Dashboard from './components/Dashboard';
 import AnimalManagement from './components/AnimalManagement';
 import Reports from './components/Reports';
@@ -108,36 +109,38 @@ function App() {
   }
 
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-50 flex">
-        <Sidebar 
-          activeSection={activeSection} 
-          setActiveSection={setActiveSection}
-          userRole={userRole}
-        />
-        
-        <div className="flex-1 flex flex-col">
-          <Header userRole={userRole} setUserRole={setUserRole} />
-          
-          <main className="flex-1 p-6 overflow-auto">
-            <Routes>
-              <Route path="/indicadores" element={<IndicatorsPage />} />
-              <Route path="/indicadores/:type" element={<IndicatorDetailPage />} />
-              <Route path="/dados-brutos" element={<RawDataViewer />} />
-              <Route path="/" element={
-                <>
-                  {activeSection === 'dashboard' && <Dashboard userRole={userRole} />}
-                  {activeSection === 'animals' && <AnimalManagement />}
-                  {activeSection === 'reports' && <Reports userRole={userRole} />}
-                  {activeSection === 'alerts' && <Alerts />}
-                  {activeSection === 'settings' && <Settings />}
-                </>
-              } />
-            </Routes>
-          </main>
+    <GrupoProvider>
+      <Router>
+        <div className="min-h-screen bg-gray-50 flex">
+          <Sidebar
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
+            userRole={userRole}
+          />
+
+          <div className="flex-1 flex flex-col">
+            <Header userRole={userRole} setUserRole={setUserRole} />
+
+            <main className="flex-1 p-6 overflow-auto">
+              <Routes>
+                <Route path="/indicadores" element={<IndicatorsPage />} />
+                <Route path="/indicadores/:type" element={<IndicatorDetailPage />} />
+                <Route path="/dados-brutos" element={<RawDataViewer />} />
+                <Route path="/" element={
+                  <>
+                    {activeSection === 'dashboard' && <Dashboard userRole={userRole} />}
+                    {activeSection === 'animals' && <AnimalManagement />}
+                    {activeSection === 'reports' && <Reports userRole={userRole} />}
+                    {activeSection === 'alerts' && <Alerts />}
+                    {activeSection === 'settings' && <Settings />}
+                  </>
+                } />
+              </Routes>
+            </main>
+          </div>
         </div>
-      </div>
-    </Router>
+      </Router>
+    </GrupoProvider>
   );
 }
 

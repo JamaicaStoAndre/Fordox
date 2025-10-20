@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Thermometer, Droplets, Wind, Activity, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 import { sensorAPI } from '../lib/supabase';
+import { useGrupo } from '../contexts/GrupoContext';
 import MetricCard from './MetricCard';
 import AlertBanner from './AlertBanner';
 import ConversionChart from './ConversionChart';
@@ -11,6 +12,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
+  const { grupoSelecionado } = useGrupo();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [sensorDataLoading, setSensorDataLoading] = useState(true);
   const [sensorDataError, setSensorDataError] = useState<string | null>(null);
@@ -29,7 +31,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
   useEffect(() => {
     // Load real sensor data on component mount
     loadSensorData();
-    
+
     const timer = setInterval(() => {
       setCurrentTime(new Date());
       // Reload sensor data every 30 seconds
@@ -37,13 +39,13 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
     }, 5000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [grupoSelecionado]);
 
   const loadSensorData = async () => {
     try {
       setSensorDataError(null);
-      console.log('Iniciando carregamento dos dados dos sensores...')
-      const data = await sensorAPI.getSensorData();
+      console.log('Iniciando carregamento dos dados dos sensores para o grupo:', grupoSelecionado?.nome)
+      const data = await sensorAPI.getSensorData(grupoSelecionado?.id);
       
       // Update metrics with real sensor data
       setMetrics(prev => ({
@@ -104,7 +106,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
-              {userRole === 'producer' ? 'Granja São João' : 'Frigorífico Central'}
+              {grupoSelecionado?.nome || (userRole === 'producer' ? 'Granja São João' : 'Frigorífico Central')}
             </h1>
             <p className="text-gray-600 mt-1">
               Última atualização: {currentTime.toLocaleTimeString('pt-BR')}
