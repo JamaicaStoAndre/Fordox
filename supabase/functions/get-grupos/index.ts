@@ -1,22 +1,9 @@
-/*
-  # Edge Function: Get Grupos
-
-  Esta função busca a lista de grupos (localizações) disponíveis
-  do PostgreSQL externo para que o usuário possa filtrar os dados.
-
-  ## Funcionalidades:
-  - Conecta ao PostgreSQL usando variáveis de ambiente
-  - Busca todos os grupos da tabela public.grupo
-  - Retorna lista ordenada alfabeticamente
-  - Implementa autenticação via Supabase Auth
-*/
-
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import pg from 'npm:pg@8.11.3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
 }
 
@@ -27,13 +14,11 @@ interface Grupo {
 }
 
 Deno.serve(async (req: Request) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // Verificar variáveis de ambiente do PostgreSQL
     const requiredEnvVars = ['PGHOST', 'PGDB', 'PGUSER', 'PGPASSWORD']
     const missingVars = requiredEnvVars.filter(varName => !Deno.env.get(varName))
 
@@ -53,7 +38,6 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Verificar autenticação
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(
@@ -65,7 +49,6 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Inicializar cliente Supabase para verificação de auth
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -84,7 +67,6 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Conectar ao PostgreSQL existente
     const client = new pg.Client({
       host: Deno.env.get('PGHOST'),
       port: parseInt(Deno.env.get('PGPORT') || '5432'),
@@ -117,7 +99,6 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Buscar todos os grupos disponíveis
     const query = `
       SELECT
         id,
@@ -154,7 +135,6 @@ Deno.serve(async (req: Request) => {
       console.warn('Warning: Failed to close database connection:', closeError)
     }
 
-    // Formatar dados dos grupos
     const grupos: Grupo[] = result.rows.map((row: any) => ({
       id: row.id,
       nome: row.nome,
