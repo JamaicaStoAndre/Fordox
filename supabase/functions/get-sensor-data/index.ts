@@ -3,7 +3,7 @@ import pg from 'npm:pg@8.11.3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 }
 
@@ -17,39 +17,12 @@ Deno.serve(async (req: Request) => {
     const grupoId = url.searchParams.get('grupo_id')
 
     console.log('Filtro de grupo recebido:', grupoId)
-
-    const requiredEnvVars = ['PGHOST', 'PGDB', 'PGUSER', 'PGPASSWORD']
-    const missingVars = requiredEnvVars.filter(varName => !Deno.env.get(varName))
-
-    if (missingVars.length > 0) {
-      console.warn('PostgreSQL not configured, returning mock data:', missingVars)
-
-      const mockMetrics = {
-        temperature: { current: 22.5, average: 22.0, min: 20.0, max: 25.0, readings: [] },
-        humidity: { current: 68, average: 65, min: 60, max: 70, readings: [] },
-        water: { current: 150, average: 145, min: 130, max: 160, readings: [] },
-        energy: { current: 12.5, average: 12.0, min: 10.0, max: 15.0, readings: [] },
-        feed: { current: 85, average: 82, min: 75, max: 90, readings: [] },
-        weight: { current: 450, average: 445, min: 430, max: 460, readings: [] }
-      }
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: {
-            sensors: {},
-            metrics: mockMetrics,
-            total_readings: 0,
-            last_updated: new Date().toISOString(),
-            mode: 'mock'
-          }
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
+    console.log('Environment variables check:', {
+      PGHOST: Deno.env.get('PGHOST') ? 'SET' : 'MISSING',
+      PGDB: Deno.env.get('PGDB') ? 'SET' : 'MISSING',
+      PGUSER: Deno.env.get('PGUSER') ? 'SET' : 'MISSING',
+      PGPASSWORD: Deno.env.get('PGPASSWORD') ? 'SET' : 'MISSING'
+    })
 
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {

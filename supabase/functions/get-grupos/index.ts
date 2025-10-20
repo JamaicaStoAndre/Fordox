@@ -3,8 +3,8 @@ import pg from 'npm:pg@8.11.3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 }
 
 interface Grupo {
@@ -19,34 +19,14 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const requiredEnvVars = ['PGHOST', 'PGDB', 'PGUSER', 'PGPASSWORD']
-    const missingVars = requiredEnvVars.filter(varName => !Deno.env.get(varName))
-
-    if (missingVars.length > 0) {
-      console.warn('PostgreSQL not configured, returning mock grupos data:', missingVars)
-
-      const mockGrupos = [
-        { id: 1, nome: 'Biopark', localizacao: 1 },
-        { id: 2, nome: 'Grupo A', localizacao: 2 },
-        { id: 3, nome: 'Grupo B', localizacao: 3 }
-      ]
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: {
-            grupos: mockGrupos,
-            total: mockGrupos.length,
-            last_updated: new Date().toISOString(),
-            mode: 'mock'
-          }
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
+    // Log environment variables status for debugging
+    console.log('Environment check:', {
+      PGHOST: Deno.env.get('PGHOST') ? 'SET' : 'NOT SET',
+      PGDB: Deno.env.get('PGDB') ? 'SET' : 'NOT SET',
+      PGUSER: Deno.env.get('PGUSER') ? 'SET' : 'NOT SET',
+      PGPASSWORD: Deno.env.get('PGPASSWORD') ? 'SET' : 'NOT SET',
+      PGPORT: Deno.env.get('PGPORT') || '5432'
+    })
 
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
