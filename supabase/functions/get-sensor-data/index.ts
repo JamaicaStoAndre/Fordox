@@ -1,16 +1,3 @@
-/*
-  # Edge Function: Get Sensor Data
-
-  Esta função conecta ao PostgreSQL existente e busca dados dos sensores
-  da tabela public.informacoes para alimentar o dashboard.
-
-  ## Funcionalidades:
-  - Conecta ao PostgreSQL usando variáveis de ambiente
-  - Busca dados mais recentes por grupo e sensor
-  - Retorna dados formatados para o dashboard
-  - Implementa autenticação via Supabase Auth
-*/
-
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import pg from 'npm:pg@8.11.3'
 
@@ -20,37 +7,17 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 }
 
-interface SensorData {
-  id: number
-  sensor: number
-  valor: number
-  grupo: number
-  data_registro: string
-  dispositivo: number
-  sensor_info?: {
-    descricao: string
-    tipo: string
-  }
-  grupo_info?: {
-    nome: string
-    localizacao: number
-  }
-}
-
 Deno.serve(async (req: Request) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // Extrair parâmetros da URL (grupo_id)
     const url = new URL(req.url)
     const grupoId = url.searchParams.get('grupo_id')
 
     console.log('Filtro de grupo recebido:', grupoId)
 
-    // Verificar variáveis de ambiente do PostgreSQL
     const requiredEnvVars = ['PGHOST', 'PGDB', 'PGUSER', 'PGPASSWORD']
     const missingVars = requiredEnvVars.filter(varName => !Deno.env.get(varName))
 
@@ -69,7 +36,6 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Verificar autenticação
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(
@@ -81,7 +47,6 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Inicializar cliente Supabase para verificação de auth
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -100,7 +65,6 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Conectar ao PostgreSQL existente
     const client = new pg.Client({
       host: Deno.env.get('PGHOST'),
       port: parseInt(Deno.env.get('PGPORT') || '5432'),
@@ -132,8 +96,6 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Buscar dados mais recentes dos sensores com informações relacionadas
-    // Se grupo_id foi fornecido, filtrar por esse grupo
     let query = `
       SELECT
         i.id,
@@ -152,7 +114,6 @@ Deno.serve(async (req: Request) => {
       WHERE i.data_registro >= NOW() - INTERVAL '24 hours'
     `
 
-    // Adicionar filtro por grupo se fornecido
     if (grupoId) {
       query += ` AND i.grupo = ${parseInt(grupoId)}`
     }
@@ -188,7 +149,6 @@ Deno.serve(async (req: Request) => {
       console.warn('Warning: Failed to close database connection:', closeError)
     }
 
-    // Processar e agrupar dados por sensor
     const sensorData: Record<string, any> = {}
     
     result.rows.forEach((row: any) => {
@@ -214,57 +174,19 @@ Deno.serve(async (req: Request) => {
       })
     })
 
-    // Calcular métricas agregadas
     const metrics = {
-      temperature: {
-        current: 0,
-        average: 0,
-        min: 0,
-        max: 0,
-        readings: []
-      },
-      humidity: {
-        current: 0,
-        average: 0,
-        min: 0,
-        max: 0,
-        readings: []
-      },
-      water: {
-        current: 0,
-        average: 0,
-        min: 0,
-        max: 0,
-        readings: []
-      },
-      energy: {
-        current: 0,
-        average: 0,
-        min: 0,
-        max: 0,
-        readings: []
-      },
-      feed: {
-        current: 0,
-        average: 0,
-        min: 0,
-        max: 0,
-        readings: []
-      },
-      weight: {
-        current: 0,
-        average: 0,
-        min: 0,
-        max: 0,
-        readings: []
-      }
+      temperature: { current: 0, average: 0, min: 0, max: 0, readings: [] },
+      humidity: { current: 0, average: 0, min: 0, max: 0, readings: [] },
+      water: { current: 0, average: 0, min: 0, max: 0, readings: [] },
+      energy: { current: 0, average: 0, min: 0, max: 0, readings: [] },
+      feed: { current: 0, average: 0, min: 0, max: 0, readings: [] },
+      weight: { current: 0, average: 0, min: 0, max: 0, readings: [] }
     }
 
-    // Processar dados por tipo de sensor
     Object.values(sensorData).forEach((sensor: any) => {
       const readings = sensor.readings.map((r: any) => r.value)
       
-      if (readings.length === 0) return; // Skip if no readings
+      if (readings.length === 0) return;
       
       const average = readings.reduce((a: number, b: number) => a + b, 0) / readings.length
       const min = Math.min(...readings)
@@ -272,7 +194,6 @@ Deno.serve(async (req: Request) => {
       const current = readings[0] || 0
       const sensorReadings = sensor.readings.slice(0, 10)
       
-      // Temperatura
       if (sensor.sensor_type === 'Celsius' || 
           sensor.sensor_name?.toLowerCase().includes('temperatura') ||
           sensor.sensor_name?.toLowerCase().includes('temp')) {
@@ -282,8 +203,6 @@ Deno.serve(async (req: Request) => {
         metrics.temperature.max = max
         metrics.temperature.readings = sensorReadings
       }
-      
-      // Umidade
       else if (sensor.sensor_type === 'Percentual' || 
                sensor.sensor_name?.toLowerCase().includes('umidade') ||
                sensor.sensor_name?.toLowerCase().includes('humidity')) {
@@ -293,8 +212,6 @@ Deno.serve(async (req: Request) => {
         metrics.humidity.max = max
         metrics.humidity.readings = sensorReadings
       }
-      
-      // Água
       else if (sensor.sensor_type === 'Litros' || 
                sensor.sensor_name?.toLowerCase().includes('agua') ||
                sensor.sensor_name?.toLowerCase().includes('water')) {
@@ -304,8 +221,6 @@ Deno.serve(async (req: Request) => {
         metrics.water.max = max
         metrics.water.readings = sensorReadings
       }
-      
-      // Energia
       else if (sensor.sensor_type === 'kW' || 
                sensor.sensor_type === 'kw' ||
                sensor.sensor_name?.toLowerCase().includes('energia') ||
@@ -316,8 +231,6 @@ Deno.serve(async (req: Request) => {
         metrics.energy.max = max
         metrics.energy.readings = sensorReadings
       }
-      
-      // Ração
       else if (sensor.sensor_type === 'Kg' || 
                sensor.sensor_type === 'kg' ||
                sensor.sensor_name?.toLowerCase().includes('racao') ||
@@ -329,8 +242,6 @@ Deno.serve(async (req: Request) => {
         metrics.feed.max = max
         metrics.feed.readings = sensorReadings
       }
-      
-      // Peso
       else if (sensor.sensor_name?.toLowerCase().includes('peso') ||
                sensor.sensor_name?.toLowerCase().includes('weight') ||
                sensor.sensor_name?.toLowerCase().includes('balanca')) {
