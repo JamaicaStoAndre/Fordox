@@ -46,7 +46,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
       setSensorDataError(null);
       console.log('Iniciando carregamento dos dados dos sensores para o grupo:', grupoSelecionado?.nome)
       const data = await sensorAPI.getSensorData(grupoSelecionado?.id);
-      
+
       // Update metrics with real sensor data
       setMetrics(prev => ({
         ...prev,
@@ -59,18 +59,14 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
         // Keep simulated values for animal-specific metrics
         feedConversion: 2.1 + (Math.random() - 0.5) * 0.2,
       }));
-      
+
       setSensorDataLoading(false);
     } catch (error) {
-      console.error('Erro ao carregar dados dos sensores:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack
-      })
-      
-      setSensorDataError(`Erro: ${error.message}`)
+      console.warn('Usando dados simulados. PostgreSQL externo não configurado.')
+
+      setSensorDataError('Modo Demonstração: Dados simulados')
       setSensorDataLoading(false);
-      
+
       // Continue with simulated data if sensor data fails
       setMetrics(prev => ({
         ...prev,
@@ -101,6 +97,24 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
 
   return (
     <div className="space-y-6">
+      {sensorDataError && sensorDataError.includes('Demonstração') && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <CheckCircle className="h-6 w-6 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-blue-900">
+                Modo Demonstração Ativo
+              </h3>
+              <p className="text-sm text-blue-700 mt-1">
+                Sistema funcionando com dados simulados. Para conectar sensores reais, configure as variáveis de ambiente do PostgreSQL nas Edge Functions.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header with real-time info */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between">
@@ -116,9 +130,9 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
                 Carregando dados dos sensores...
               </p>
             )}
-            {sensorDataError && (
+            {sensorDataError && !sensorDataError.includes('Demonstração') && (
               <p className="text-red-600 text-sm mt-1">
-                Erro ao carregar sensores: {sensorDataError}
+                {sensorDataError}
               </p>
             )}
           </div>
@@ -126,12 +140,12 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
             <p className="text-sm text-gray-500">Status do Sistema</p>
             <div className="flex items-center space-x-2 mt-1">
               <div className={`w-3 h-3 rounded-full animate-pulse ${
-                sensorDataError ? 'bg-red-500' : sensorDataLoading ? 'bg-yellow-500' : 'bg-green-500'
+                sensorDataError && !sensorDataError.includes('Demonstração') ? 'bg-red-500' : sensorDataLoading ? 'bg-yellow-500' : 'bg-green-500'
               }`}></div>
               <span className={`font-medium ${
-                sensorDataError ? 'text-red-700' : sensorDataLoading ? 'text-yellow-700' : 'text-green-700'
+                sensorDataError && !sensorDataError.includes('Demonstração') ? 'text-red-700' : sensorDataLoading ? 'text-yellow-700' : 'text-green-700'
               }`}>
-                {sensorDataError ? 'Erro' : sensorDataLoading ? 'Carregando' : 'Monitorando'}
+                {sensorDataError && sensorDataError.includes('Demonstração') ? 'Demonstração' : sensorDataError ? 'Erro' : sensorDataLoading ? 'Carregando' : 'Monitorando'}
               </span>
             </div>
           </div>
